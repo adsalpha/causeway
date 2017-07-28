@@ -1,0 +1,6 @@
+flask
+python-bitcoinlib
+bip32utils
+pbkdf2
+requests
+pymongo
