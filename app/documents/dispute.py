@@ -1,8 +1,8 @@
-from .encrypted import EncryptedDocument
-from .dispute_resolution import DisputeResolution
+from app.config.db import jobs
+from app.exceptions import NonexistentDocumentException
 from .accept_dispute_resolution import AcceptDisputeResolution
-from exceptions import NonexistentDocumentException
-from config.db import jobs
+from .dispute_resolution import DisputeResolution
+from .encrypted import EncryptedDocument
 
 
 class Dispute(EncryptedDocument):

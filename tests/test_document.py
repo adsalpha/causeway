@@ -1,4 +1,3 @@
-from tests.test_settings import server_uri
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from bitcoin.wallet import CBitcoinSecret
@@ -6,6 +5,8 @@ from bitcoin.signmessage import BitcoinMessage, SignMessage
 from hashlib import sha256
 import requests
 import json
+
+from tests.test_settings import server_uri
 
 
 class TestDocument(ABC):

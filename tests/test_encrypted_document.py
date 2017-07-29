@@ -1,7 +1,8 @@
-from tests.test_document import TestDocument
 from collections import OrderedDict
 from hashlib import sha256
 import json
+
+from tests.test_document import TestDocument
 
 
 class TestEncryptedDocument(TestDocument):

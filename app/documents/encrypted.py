@@ -1,5 +1,6 @@
-from .document import Document
 from abc import abstractclassmethod
+
+from .document import Document
 
 
 class EncryptedDocument(Document):

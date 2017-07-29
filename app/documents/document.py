@@ -2,6 +2,8 @@ from collections import OrderedDict
 from abc import ABC, abstractmethod, abstractclassmethod
 import json
 
+from app.exceptions import InvalidDocumentStructureException, InvalidDocumentTypeException, DuplicateDocumentException
+
 
 class Document(ABC):
     """
@@ -47,16 +49,16 @@ class Document(ABC):
 
     def validate(self):
         if not self.expected_structure_ok():
-            raise ValueError('Bad expected structure, please check the Rein Document Specification v3.')
+            raise NotImplementedError('Bad expected structure, please check the Rein Document Specification v3.')
         if not self.incoming_structure_ok():
-            raise ValueError('Bad incoming document structure, expected {}.'
-                             .format(self.expected_structure))
+            raise InvalidDocumentStructureException('Bad incoming document structure, expected {}.'
+                                                    .format(self.expected_structure))
         if not self.type_ok():
-            raise ValueError('Bad incoming document type, expected {}.'
-                             .format(self.expected_type))
+            raise InvalidDocumentTypeException('Bad incoming document type, expected {}.'
+                                               .format(self.expected_type))
         if self.is_duplicate():
-            raise ValueError('The server already has a document with ID {}'
-                             .format(self.as_dict['id']))
+            raise DuplicateDocumentException('The server already has a document with ID {}'
+                                             .format(self.as_dict['id']))
 
     @abstractmethod
     def save(self):
@@ -138,7 +140,7 @@ class Document(ABC):
 
     @abstractmethod
     def is_duplicate(self):
-        pass
+        return
 
     # FROM DATABASE
 
@@ -147,4 +149,4 @@ class Document(ABC):
         """
         Initializes a document using the database.
         """
-        pass
+        return

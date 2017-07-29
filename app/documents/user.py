@@ -1,6 +1,6 @@
+from app.config.db import users
+from app.exceptions import NonexistentDocumentException
 from .unencrypted import UnencryptedDocument
-from exceptions import NonexistentDocumentException
-from config.db import users
 
 
 class User(UnencryptedDocument):

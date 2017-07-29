@@ -1,9 +1,10 @@
-from documents.user import User
-from config.db import requests
-from uuid import uuid4
 from time import time
-from exceptions import NonexistentDocumentException
+from uuid import uuid4
 import json
+
+from app.documents.user import User
+from app.config.db import requests
+from app.exceptions import InvalidDocumentStructureException, NonexistentDocumentException
 
 
 class CausewayRequest:
@@ -50,8 +51,8 @@ class CausewayRequest:
         if db_request and db_request['expiration'] > time() and 'payload' not in db_request:
             return request
         else:
-            raise ValueError('Can not find valid request with nonce {} from user {} expiring after {}.'
-                             .format(nonce, user, int(time())))
+            raise NonexistentDocumentException('Can not find valid request with nonce {} from user {} expiring after {}.'
+                                               .format(nonce, user, int(time())))
 
     def update(self, payload: str):
         try:
@@ -61,7 +62,7 @@ class CausewayRequest:
             self.as_dict['payload'] = payload
             self.as_dict['document_id'] = id
         except:
-            raise ValueError('Bad payload.')
+            raise InvalidDocumentStructureException('Bad payload.')
 
     # From document ID
 

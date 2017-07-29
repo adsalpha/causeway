@@ -1,5 +1,3 @@
-from tests.test_settings import server_uri
-from tests.test_document import TestDocument
 from collections import OrderedDict
 from bip32utils import BIP32Key, BIP32_HARDEN
 from hashlib import sha256, sha512
@@ -9,8 +7,11 @@ from pbkdf2 import PBKDF2
 from os import urandom
 from time import time
 import requests
-import json
 import hmac
+import json
+
+from tests.test_settings import server_uri
+from tests.test_document import TestDocument
 
 
 class TestUser(TestDocument):
@@ -54,7 +55,7 @@ class TestUser(TestDocument):
             # Binary to words
             cursor = 0
             mnemonic = []
-            with open('tests/english.json') as words_file:
+            with open('./english.json') as words_file:
                 words = json.loads(words_file.read())
                 while cursor < len(bin_mnemonic):
                     index = int(bin_mnemonic[cursor:cursor + 11], 2)

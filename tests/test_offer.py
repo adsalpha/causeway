@@ -1,5 +1,3 @@
-from tests.test_settings import server_uri
-from tests.test_encrypted_document import TestEncryptedDocument
 from bitcoin.core import x, b2x
 from bitcoin.core.script import CScript, OP_CHECKMULTISIG
 from bitcoin.wallet import CBitcoinAddress
@@ -7,6 +5,10 @@ from collections import OrderedDict
 from time import time
 import requests
 import json
+
+from tests.test_settings import server_uri
+from tests.test_encrypted_document import TestEncryptedDocument
+
 
 
 class TestOffer(TestEncryptedDocument):

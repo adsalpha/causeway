@@ -1,9 +1,10 @@
-from tests.test_settings import server_uri
-from tests.test_encrypted_document import TestEncryptedDocument
 from collections import OrderedDict
 from time import time
 import requests
 import json
+
+from tests.test_settings import server_uri
+from tests.test_encrypted_document import TestEncryptedDocument
 
 
 class TestDelivery(TestEncryptedDocument):

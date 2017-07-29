@@ -1,8 +1,9 @@
-from documents.document import Document
+import json
 from copy import deepcopy
 from hashlib import sha256
 from bitcoin.signmessage import BitcoinMessage, VerifyMessage
-import json
+
+from app.documents.document import Document
 
 
 class UnencryptedDocument(Document):

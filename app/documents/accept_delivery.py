@@ -1,6 +1,6 @@
+from app.config.db import jobs
+from app.exceptions import NonexistentDocumentException
 from .encrypted import EncryptedDocument
-from exceptions import NonexistentDocumentException
-from config.db import jobs
 
 
 class AcceptDelivery(EncryptedDocument):

@@ -1,15 +1,13 @@
-from tests.test_user import TestUser
-from tests.test_job import TestJob
-from tests.test_bid import TestBid
-from tests.test_offer import TestOffer
-from tests.test_delivery import TestDelivery
+from app.config.db import client, db
 from tests.test_accept_delivery import TestAcceptDelivery
+from tests.test_accept_dispute_resolution import TestAcceptDisputeResolution
+from tests.test_bid import TestBid
+from tests.test_delivery import TestDelivery
 from tests.test_dispute import TestDispute
 from tests.test_dispute_resolution import TestDisputeResolution
-from tests.test_accept_dispute_resolution import TestAcceptDisputeResolution
-from config.db import client, db
-import tests.test_expected_answers
-
+from tests.test_job import TestJob
+from tests.test_offer import TestOffer
+from tests.test_user import TestUser
 
 client.drop_database(db)
 
@@ -157,4 +155,4 @@ print('Got dispute for job 2.')
 
 print('\nGET TESTS PASSED.\n')
 
-print('Yaaaay! You can now deploy this build.')
+print('Yaaaay! You can now push this build.')

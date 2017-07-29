@@ -1,23 +1,23 @@
-from causeway_request import CausewayRequest
-from documents.job import Job
-from documents.user import User
-from exceptions import NonexistentDocumentException
-import config.server
 from flask import Flask, request
 import json
+
+from app.documents.user import User
+from app.documents.job import Job
+from app.causeway_request import CausewayRequest
+from app.exceptions import ProcessingError, NonexistentDocumentException
 
 
 app = Flask(__name__)
 app.template_folder = 'json'
 
 
-def error(status_code, exception: Exception):
+def error(status_code: int, exception: Exception):
     return json.dumps({'result': 'error',
                        'message': '{}: {}'.format(type(exception).__name__, str(exception))}), \
            status_code
 
 
-def success(status_code, message = None):
+def success(status_code: int, message: int = None):
     if message:
         success = {'result': 'success', 'message': message}
     else:
@@ -34,11 +34,11 @@ def info():
     Information about the server and its status.
     """
     server_info = {
-        "url": config.server.server_url,
-        "causeway_version": config.server.causeway_version,
-        "pricing_type": config.server.pricing_type,
-        "free_data": config.server.free_data,
-        "description": config.server.description
+        "url": app.config.server.server_url,
+        "causeway_version": app.config.server.causeway_version,
+        "pricing_type": app.config.server.pricing_type,
+        "free_data": app.config.server.free_data,
+        "description": app.config.server.description
     }
     return json.dumps(server_info)
 
@@ -64,12 +64,12 @@ def create_job():
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         Job.new(request.form['payload'])
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -118,12 +118,12 @@ def show_job_by_id(job_id):
 def add_bid_to_job(job_id):
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         Job.from_database(job_id).add_bid(request.form['payload'])
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -164,12 +164,12 @@ def create_offer_for_job(job_id, bid_id):
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         Job.from_database(job_id).get_bid(bid_id).offer = request.form['payload']
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -196,12 +196,12 @@ def add_delivery(job_id):
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         Job.from_database(job_id).delivery = request.form['payload']
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -226,14 +226,14 @@ def accept_delivery(job_id):
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         job = Job.from_database(job_id)
         job.delivery.accept_delivery = request.form['payload']
         job.finish()
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -249,12 +249,12 @@ def add_dispute(job_id):
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         Job.from_database(job_id).dispute = request.form['payload']
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -279,12 +279,12 @@ def resolve_dispute(job_id):
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         Job.from_database(job_id).dispute.resolution = request.form['payload']
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -297,14 +297,14 @@ def accept_resolution(job_id):
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except ValueError as e:
+    except NonexistentDocumentException as e:
         return error(401, e)
     try:
         job = Job.from_database(job_id)
         job.dispute.accept_resolution = request.form['payload']
         job.finish()
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)
@@ -321,7 +321,7 @@ def add_user():
     try:
         User.new(request.form['payload'])
         return success(201)
-    except (ValueError, TypeError) as e:
+    except ProcessingError as e:
         return error(422, e)
     except NotImplementedError as e:
         return error(501, e)

@@ -1,10 +1,11 @@
-from .unencrypted import UnencryptedDocument
+import json
+
+from app.config.db import jobs
+from app.exceptions import NonexistentDocumentException
 from .bid import Bid
 from .delivery import Delivery
 from .dispute import Dispute
-from exceptions import NonexistentDocumentException
-from config.db import jobs
-import json
+from .unencrypted import UnencryptedDocument
 
 
 class Job(UnencryptedDocument):
