@@ -8,7 +8,6 @@ from app.exceptions import ProcessingError, NonexistentDocumentException
 
 
 app = Flask(__name__)
-app.template_folder = 'json'
 
 
 def error(status_code: int, exception: Exception):

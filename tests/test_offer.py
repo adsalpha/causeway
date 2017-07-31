@@ -44,15 +44,15 @@ class TestOffer(TestEncryptedDocument):
                 'redeem_script': b2x(worker_redeem_script),
                 'tx_fee': .002
             }),
-            'creator_refund': OrderedDict({
-                'address': self.creator.delegate_address,
-                'pubkey': self.creator.delegate_public_key,
-            }),
             'mediator_escrow': OrderedDict({
                 'address': mediator_escrow_address,
                 'pubkey': self.bid.job.mediator.delegate_public_key,
                 'redeem_script': b2x(mediator_redeem_script),
                 'tx_fee': .002
+            }),
+            'creator_refund': OrderedDict({
+                'address': self.creator.delegate_address,
+                'pubkey': self.creator.delegate_public_key,
             })
         })
         self.encrypt()
