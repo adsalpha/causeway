@@ -1,8 +1,5 @@
 __pycache*
-*.sqlite3
 *.log
-*.db
 *.pyc
-settings.py
 venv/
 .idea/
