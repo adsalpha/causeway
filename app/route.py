@@ -56,26 +56,32 @@ def request_id():
 # JOBS
 
 
-@app.route('/jobs/add', methods=['POST'])
+@app.route('/jobs', methods=['GET', 'POST'])
 def create_job():
     """
     Add a job.
     """
-    try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
-        return error(401, e)
-    try:
-        Job.new(request.form['payload'])
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
+    if request.method == 'GET':
+        try:
+            return Job.BulkQuery(active_only=False).serialize()
+        except NonexistentDocumentException as e:
+            return error(404, e)
+    elif request.method == 'POST':
+        try:
+            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
+        except NonexistentDocumentException as e:
+            return error(401, e)
+        try:
+            Job.new(request.form['payload'])
+            return success(201)
+        except ProcessingError as e:
+            return error(422, e)
+        except NotImplementedError as e:
+            return error(501, e)
 
 
 @app.route('/jobs/active')
-def show_active_jobs():
+def active_jobs():
     """
     Active jobs registered with this server.
     Returns an error if no jobs are available.
@@ -86,20 +92,8 @@ def show_active_jobs():
         return error(404, e)
 
 
-@app.route('/jobs/all')
-def show_all_jobs():
-    """
-    Active jobs registered with this server.
-    Returns an error if no jobs are available.
-    """
-    try:
-        return Job.BulkQuery(active_only=False).serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
-
-
 @app.route('/jobs/<string:job_id>')
-def show_job_by_id(job_id):
+def job_by_id(job_id):
     """
     A job with the specified ID.
     Returns an error if not found.
@@ -113,39 +107,29 @@ def show_job_by_id(job_id):
 # BIDS
 
 
-@app.route('/jobs/<string:job_id>/bids/add', methods=['POST'])
-def add_bid_to_job(job_id):
-    try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
-        return error(401, e)
-    try:
-        Job.from_database(job_id).add_bid(request.form['payload'])
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
-
-
-@app.route('/jobs/<string:job_id>/bids')
-def job_bids(job_id):
-    """
-    All bids for a job.
-    Returns an error if no bids are available.
-    """
-    try:
-        return Job.from_database(job_id).all_bids().serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+@app.route('/jobs/<string:job_id>/bids', methods=['GET', 'POST'])
+def bids(job_id):
+    if request.method == 'GET':
+        try:
+            return Job.from_database(job_id).all_bids().serialize()
+        except NonexistentDocumentException as e:
+            return error(404, e)
+    elif request.method == 'POST':
+        try:
+            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
+        except NonexistentDocumentException as e:
+            return error(401, e)
+        try:
+            Job.from_database(job_id).add_bid(request.form['payload'])
+            return success(201)
+        except ProcessingError as e:
+            return error(422, e)
+        except NotImplementedError as e:
+            return error(501, e)
 
 
 @app.route('/jobs/<string:job_id>/bids/<string:bid_id>')
-def job_bid_by_id(job_id, bid_id):
-    """
-    A specific bid submitted to a job.
-    Returns an error if bid does not exist.
-    """
+def bid_by_id(job_id, bid_id):
     try:
         return Job.from_database(job_id).get_bid(bid_id).serialize()
     except NonexistentDocumentException as e:
@@ -155,73 +139,56 @@ def job_bid_by_id(job_id, bid_id):
 # OFFERS
 
 
-@app.route('/jobs/<string:job_id>/bids/<string:bid_id>/offer', methods=['POST'])
-def create_offer_for_job(job_id, bid_id):
-    """
-    Award a job to a bidder. The URL should contain the 'id' parameter.
-    Returns an error if the URL is invalid or the ID is invalid.
-    """
-    try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
-        return error(401, e)
-    try:
-        Job.from_database(job_id).get_bid(bid_id).offer = request.form['payload']
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
-
-
+@app.route('/jobs/<string:job_id>/bids/<string:bid_id>/offer', methods=['GET', 'POST'])
 @app.route('/jobs/<string:job_id>/offer')
-def show_offer_for_job(job_id):
-    """
-    Get bid that the job was offered to.
-    """
-    try:
-        return Job.from_database(job_id).bid_offered_to().serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+def offer(job_id, bid_id):
+    if request.method == 'GET':
+        try:
+            return Job.from_database(job_id).bid_offered_to().serialize()
+        except NonexistentDocumentException as e:
+            return error(404, e)
+    elif request.method == 'POST':
+        try:
+            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
+        except NonexistentDocumentException as e:
+            return error(401, e)
+        try:
+            Job.from_database(job_id).get_bid(bid_id).offer = request.form['payload']
+            return success(201)
+        except ProcessingError as e:
+            return error(422, e)
+        except NotImplementedError as e:
+            return error(501, e)
 
 
 # DELIVERY
 
 
-@app.route('/jobs/<string:job_id>/delivery/add', methods=['POST'])
-def add_delivery(job_id):
-    """
-    Submit a delivery.
-    """
-    try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
-        return error(401, e)
-    try:
-        Job.from_database(job_id).delivery = request.form['payload']
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
+@app.route('/jobs/<string:job_id>/delivery', methods=['GET', 'POST'])
+def delivery(job_id):
+    if request.method == 'GET':
+        try:
+            return Job.from_database(job_id).delivery.serialize()
+        except NonexistentDocumentException as e:
+            return error(404, e)
+    elif request.method == 'POST':
+        try:
+            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
+        except NonexistentDocumentException as e:
+            return error(401, e)
+        try:
+            Job.from_database(job_id).delivery = request.form['payload']
+            return success(201)
+        except ProcessingError as e:
+            return error(422, e)
+        except NotImplementedError as e:
+            return error(501, e)
 
 
-@app.route('/jobs/<string:job_id>/delivery')
-def show_delivery(job_id):
-    """
-    What a user submitted for a job delivery.
-    Returns an error if no delivery has yet been submitted.
-    """
-    try:
-        return Job.from_database(job_id).delivery.serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
-
-
-@app.route('/jobs/<string:job_id>/delivery/accept', methods=['POST'])
+@app.route('/jobs/<string:job_id>/delivery/acceptance', methods=['POST'])
 def accept_delivery(job_id):
     """
-    Accept a delivery.
+    :form-params
     """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
@@ -241,41 +208,29 @@ def accept_delivery(job_id):
 # DISPUTE
 
 
-@app.route('/jobs/<string:job_id>/dispute/add', methods=['POST'])
-def add_dispute(job_id):
-    """
-    File a dispute.
-    """
-    try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
-        return error(401, e)
-    try:
-        Job.from_database(job_id).dispute = request.form['payload']
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
+@app.route('/jobs/<string:job_id>/dispute', methods=['GET', 'POST'])
+def dispute(job_id):
+    if request.method == 'GET':
+        try:
+            return Job.from_database(job_id).dispute.serialize()
+        except NonexistentDocumentException as e:
+            return error(404, e)
+    elif request.method == 'POST':
+        try:
+            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
+        except NonexistentDocumentException as e:
+            return error(401, e)
+        try:
+            Job.from_database(job_id).dispute = request.form['payload']
+            return success(201)
+        except ProcessingError as e:
+            return error(422, e)
+        except NotImplementedError as e:
+            return error(501, e)
 
 
-@app.route('/jobs/<string:job_id>/dispute')
-def show_dispute(job_id):
-    """
-    Disputes that were filed for a job.
-    Returns an error if no dispute was filed.
-    """
-    try:
-        return Job.from_database(job_id).dispute.serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
-
-
-@app.route('/jobs/<string:job_id>/dispute/resolution/add', methods=['POST'])
+@app.route('/jobs/<string:job_id>/dispute/resolution', methods=['POST'])
 def resolve_dispute(job_id):
-    """
-    Cancel or finish a dispute.
-    """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
     except NonexistentDocumentException as e:
@@ -289,11 +244,8 @@ def resolve_dispute(job_id):
         return error(501, e)
 
 
-@app.route('/jobs/<string:job_id>/dispute/resolution/accept', methods=['POST'])
+@app.route('/jobs/<string:job_id>/dispute/resolution/acceptance', methods=['POST'])
 def accept_resolution(job_id):
-    """
-    Cancel or finish a dispute.
-    """
     try:
         CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
     except NonexistentDocumentException as e:
@@ -312,29 +264,21 @@ def accept_resolution(job_id):
 # USERS
 
 
-@app.route('/users/add', methods=['POST'])
-def add_user():
-    """
-    Add a user.
-    """
-    try:
-        User.new(request.form['payload'])
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
-
-
-@app.route('/users')
+@app.route('/users', methods=['GET', 'POST'])
 def users():
-    """
-    All users registered with a server.
-    """
-    try:
-        return User.BulkQuery().serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+    if request.method == 'GET':
+        try:
+            return User.BulkQuery().serialize()
+        except NonexistentDocumentException as e:
+            return error(404, e)
+    elif request.method == 'POST':
+        try:
+            User.new(request.form['payload'])
+            return success(201)
+        except ProcessingError as e:
+            return error(422, e)
+        except NotImplementedError as e:
+            return error(501, e)
 
 
 @app.route('/users/<string:user_id>')
