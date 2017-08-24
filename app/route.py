@@ -3,8 +3,8 @@ import json
 
 from app.documents.user import User
 from app.documents.job import Job
-from app.causeway_request import CausewayRequest
-from app.exceptions import ProcessingError, NonexistentDocumentException
+from app.causeway_token import CausewayToken
+from app.exceptions import ProcessingError, NonexistentDocumentException, BadTokenException
 
 
 app = Flask(__name__)
@@ -42,13 +42,16 @@ def info():
     return json.dumps(server_info)
 
 
-@app.route('/nonce')
+@app.route('/token')
 def request_id():
     """
     A unique ID which identifies a Causeway request.
     """
     try:
-        return CausewayRequest.new(user=request.form['user']).serialize()
+        return json.dumps(
+            {'token': CausewayToken.new(
+                user_id=request.form['user_id']).encoded.decode('utf-8')}
+        )
     except NonexistentDocumentException as e:
         return error(401, e)
 
@@ -57,10 +60,7 @@ def request_id():
 
 
 @app.route('/jobs', methods=['GET', 'POST'])
-def create_job():
-    """
-    Add a job.
-    """
+def jobs():
     if request.method == 'GET':
         try:
             return Job.BulkQuery(active_only=False).serialize()
@@ -68,8 +68,8 @@ def create_job():
             return error(404, e)
     elif request.method == 'POST':
         try:
-            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-        except NonexistentDocumentException as e:
+            CausewayToken.parse(request.form['token']).save(request.form['payload'])
+        except BadTokenException as e:
             return error(401, e)
         try:
             Job.new(request.form['payload'])
@@ -116,8 +116,8 @@ def bids(job_id):
             return error(404, e)
     elif request.method == 'POST':
         try:
-            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-        except NonexistentDocumentException as e:
+            CausewayToken.parse(request.form['token']).save(request.form['payload'])
+        except BadTokenException as e:
             return error(401, e)
         try:
             Job.from_database(job_id).add_bid(request.form['payload'])
@@ -149,8 +149,8 @@ def offer(job_id, bid_id):
             return error(404, e)
     elif request.method == 'POST':
         try:
-            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-        except NonexistentDocumentException as e:
+            CausewayToken.parse(request.form['token']).save(request.form['payload'])
+        except BadTokenException as e:
             return error(401, e)
         try:
             Job.from_database(job_id).get_bid(bid_id).offer = request.form['payload']
@@ -173,8 +173,8 @@ def delivery(job_id):
             return error(404, e)
     elif request.method == 'POST':
         try:
-            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-        except NonexistentDocumentException as e:
+            CausewayToken.parse(request.form['token']).save(request.form['payload'])
+        except BadTokenException as e:
             return error(401, e)
         try:
             Job.from_database(job_id).delivery = request.form['payload']
@@ -191,8 +191,8 @@ def accept_delivery(job_id):
     :form-params
     """
     try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
+        CausewayToken.parse(request.form['token']).save(request.form['payload'])
+    except BadTokenException as e:
         return error(401, e)
     try:
         job = Job.from_database(job_id)
@@ -217,8 +217,8 @@ def dispute(job_id):
             return error(404, e)
     elif request.method == 'POST':
         try:
-            CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-        except NonexistentDocumentException as e:
+            CausewayToken.parse(request.form['token']).save(request.form['payload'])
+        except BadTokenException as e:
             return error(401, e)
         try:
             Job.from_database(job_id).dispute = request.form['payload']
@@ -232,8 +232,8 @@ def dispute(job_id):
 @app.route('/jobs/<string:job_id>/dispute/resolution', methods=['POST'])
 def resolve_dispute(job_id):
     try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
+        CausewayToken.parse(request.form['token']).save(request.form['payload'])
+    except BadTokenException as e:
         return error(401, e)
     try:
         Job.from_database(job_id).dispute.resolution = request.form['payload']
@@ -247,8 +247,8 @@ def resolve_dispute(job_id):
 @app.route('/jobs/<string:job_id>/dispute/resolution/acceptance', methods=['POST'])
 def accept_resolution(job_id):
     try:
-        CausewayRequest.validate(request.form['user'], request.form['nonce']).update(request.form['payload'])
-    except NonexistentDocumentException as e:
+        CausewayToken.parse(request.form['token']).save(request.form['payload'])
+    except BadTokenException as e:
         return error(401, e)
     try:
         job = Job.from_database(job_id)

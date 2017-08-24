@@ -12,3 +12,6 @@ class InvalidDocumentStructureException(ProcessingError):
 
 class InvalidDocumentTypeException(ProcessingError):
     """Raise when incoming document type validation fails."""
+
+class BadTokenException(ProcessingError):
+    """Raise when a JWT has expired or has invalid syntax."""

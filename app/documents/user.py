@@ -52,6 +52,14 @@ class User(UnencryptedDocument):
         else:
             raise NonexistentDocumentException(user_id)
 
+    @staticmethod
+    def exists(user_id: str):
+        return bool(users.count({'$or': [
+            {'id': user_id},
+            {'login': user_id},
+            {'email': user_id}
+        ]}))
+
     # TODO
     def compute_rating(self):
         return 0

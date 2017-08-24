@@ -1,3 +1,5 @@
+from time import sleep
+
 from app.config.db import client, db
 from tests.test_accept_delivery import TestAcceptDelivery
 from tests.test_accept_dispute_resolution import TestAcceptDisputeResolution
@@ -36,7 +38,7 @@ print('Created a job.')
 assert job1.send().status_code == 401
 print('Verified nonce checking.')
 
-job1.refresh_nonce()
+job1.new_token()
 assert job1.send().status_code == 422
 print('Verified job duplicate check.')
 
@@ -46,7 +48,7 @@ bid1 = TestBid(description='I will write the tests for you.',
 assert bid1.send().status_code == 201
 print('Created a bid.')
 
-bid1.refresh_nonce()
+bid1.new_token()
 assert bid1.send().status_code == 422
 print('Verified bid duplicate check.')
 
@@ -54,7 +56,7 @@ offer1 = TestOffer(bid=bid1)
 assert offer1.send().status_code == 201
 print('Offered to bid.')
 
-offer1.refresh_nonce()
+offer1.new_token()
 assert offer1.send().status_code == 422
 print('Verified offer duplicate check.')
 
@@ -64,7 +66,7 @@ delivery1 = TestDelivery(description='https://github.com/barbara/dummy-causeway-
 assert delivery1.send().status_code == 201
 print('Delivered to job.')
 
-delivery1.refresh_nonce()
+delivery1.new_token()
 assert delivery1.send().status_code == 422
 print('Verified delivery duplicate check.')
 
@@ -72,13 +74,13 @@ accept_delivery1 = TestAcceptDelivery(delivery=delivery1)
 assert accept_delivery1.send().status_code == 201
 print('Accepted delivery.')
 
-accept_delivery1.refresh_nonce()
+accept_delivery1.new_token()
 assert accept_delivery1.send().status_code == 422
 print('Verified accept delivery duplicate check.')
 
 job2 = TestJob(name='Rewrite existing Rein client code to work with the new Causeway',
                description='Rewrite https://github.com/ReinProject/python-rein according to RDS v3',
-               tags=['rein', 'spe'],
+               tags=['rein', 'specs'],
                creator=george,
                mediator=barbara)
 assert job2.send().status_code == 201
@@ -100,7 +102,7 @@ dispute2 = TestDispute(description='No delivery from John.',
 assert dispute2.send().status_code == 201
 print('Disputed the second job.')
 
-dispute2.refresh_nonce()
+dispute2.new_token()
 assert dispute2.send().status_code == 422
 print('Verified dispute duplicate check.')
 
@@ -110,7 +112,7 @@ dispute_resolution2 = TestDisputeResolution(winner=george,
 assert dispute_resolution2.send().status_code == 201
 print('Resolved the second job dispute.')
 
-dispute_resolution2.refresh_nonce()
+dispute_resolution2.new_token()
 assert dispute_resolution2.send().status_code == 422
 print('Verified dispute resolution duplicate check.')
 
@@ -118,7 +120,7 @@ accept_dispute_resolution2 = TestAcceptDisputeResolution(dispute=dispute2)
 assert accept_dispute_resolution2.send().status_code == 201
 print('Accepted the resolution for the second dispute.')
 
-accept_dispute_resolution2.refresh_nonce()
+accept_dispute_resolution2.new_token()
 assert accept_dispute_resolution2.send().status_code == 422
 print('Verified accept dispute resolution duplicate check.')
 

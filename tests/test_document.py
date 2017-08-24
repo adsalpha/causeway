@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from collections import OrderedDict
 from bitcoin.wallet import CBitcoinSecret
 from bitcoin.signmessage import BitcoinMessage, SignMessage
@@ -11,34 +11,16 @@ from tests.test_settings import server_uri
 
 class TestDocument(ABC):
 
-    def encrypt(self):
-        raise NotImplementedError('Expecting for this to be implemented by subclasses.')
-
-    def obtain_id(self):
-        self['id'] = self.id
-        self.as_dict.move_to_end('id', last=False)
-
-    def sign(self):
-        self['validity'] = self.validity
-
-    @abstractmethod
-    def send(self):
-        return
-
     @property
-    def nonce(self):
+    def api_uri(self):
         try:
-            return self._nonce
+            return self._api_uri
         except AttributeError:
-            self._nonce = json.loads(
-                requests.get(server_uri.format(location='nonce'), data={'user': self.creator['id']}).content
-            )
-            return self._nonce
+            raise NotImplementedError('Documents must define the API URI they shall be sent to.')
 
-    def refresh_nonce(self):
-        self._nonce = json.loads(
-            requests.get(server_uri.format(location='nonce'), data={'user': self.creator['id']}).content
-        )
+    @api_uri.setter
+    def api_uri(self, value):
+        self._api_uri = value
 
     @property
     def as_dict(self):
@@ -93,3 +75,34 @@ class TestDocument(ABC):
     @creator.setter
     def creator(self, value):
         self._creator = value
+
+    @property
+    def token(self):
+        try:
+            return self._token
+        except AttributeError:
+            return self.new_token()
+
+    def new_token(self):
+        self._token = requests.get(
+            server_uri.format(location='token'),
+            data={'user_id': self.creator['id']}
+        ).json()['token']
+        return self.token
+
+    def encrypt(self):
+        raise NotImplementedError('Expecting for this to be implemented by subclasses.')
+
+    def obtain_id(self):
+        self['id'] = self.id
+        self.as_dict.move_to_end('id', last=False)
+
+    def sign(self):
+        self['validity'] = self.validity
+
+    def send(self):
+        return requests.post(
+            self.api_uri,
+            data={'payload': json.dumps(self.as_dict),
+                  'token': self.token}
+        )

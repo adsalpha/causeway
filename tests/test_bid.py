@@ -1,7 +1,6 @@
 from collections import OrderedDict
 from time import time
 import requests
-import json
 
 from tests.test_settings import server_uri
 from tests.test_encrypted_document import TestEncryptedDocument
@@ -19,6 +18,7 @@ class TestBid(TestEncryptedDocument):
         self.creator = worker
         self.job = job
         self.type = 'bid'
+        self.api_uri = server_uri.format(location='jobs/{}/bids'.format(self.job['id']))
         self.as_dict = OrderedDict({
             'type': self.type,
             'job': OrderedDict({
@@ -37,12 +37,6 @@ class TestBid(TestEncryptedDocument):
         self.encrypt()
         self.obtain_id()
         self.sign()
-
-    def send(self):
-        return requests.post(server_uri.format(location='jobs/{}/bids/add'.format(self.job['id'])),
-                             data={'payload': json.dumps(self.as_dict),
-                                   'user': self.nonce['user'],
-                                   'nonce': self.nonce['nonce']})
 
     @staticmethod
     def get(job_id, bid_id):

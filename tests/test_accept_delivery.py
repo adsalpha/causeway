@@ -1,7 +1,5 @@
 from collections import OrderedDict
 from time import time
-import requests
-import json
 
 from tests.test_settings import server_uri
 from tests.test_encrypted_document import TestEncryptedDocument
@@ -13,11 +11,12 @@ class TestAcceptDelivery(TestEncryptedDocument):
         self.delivery = delivery
         self.creator = self.delivery.job.creator
         self.type = 'accept_delivery'
+        self.api_uri = server_uri.format(location='jobs/{}/delivery/acceptance'.format(self.delivery.job['id']))
         self.as_dict = OrderedDict({
             'type': self.type,
             'delivery': OrderedDict({
                 'id': self.delivery['id'],
-                'url': server_uri.format(location='jobs/{}/delivery'.format(self.delivery.job['id']))
+                'uri': server_uri.format(location='jobs/{}/delivery'.format(self.delivery.job['id']))
             }),
             'created_at': int(time()),
             'worker_payment': OrderedDict({
@@ -34,11 +33,3 @@ class TestAcceptDelivery(TestEncryptedDocument):
         self.encrypt()
         self.obtain_id()
         self.sign()
-
-    def send(self):
-        return requests.post(
-            server_uri.format(location='jobs/{}/delivery/accept'.format(self.delivery.job['id'])),
-            data={'payload': json.dumps(self.as_dict),
-                  'user': self.nonce['user'],
-                  'nonce': self.nonce['nonce']}
-        )

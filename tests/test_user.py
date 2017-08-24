@@ -39,7 +39,7 @@ class TestUser(TestDocument):
         self.sign()
 
     def send(self):
-        return requests.post(server_uri.format(location='users/add'), data={'payload': json.dumps(self.as_dict)})
+        return requests.post(server_uri.format(location='users'), data={'payload': json.dumps(self.as_dict)})
 
     @property
     def mnemonic(self):

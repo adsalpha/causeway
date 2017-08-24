@@ -3,8 +3,6 @@ from bitcoin.core.script import CScript, OP_CHECKMULTISIG
 from bitcoin.wallet import CBitcoinAddress
 from collections import OrderedDict
 from time import time
-import requests
-import json
 
 from tests.test_settings import server_uri
 from tests.test_encrypted_document import TestEncryptedDocument
@@ -17,6 +15,7 @@ class TestOffer(TestEncryptedDocument):
         self.bid = bid
         self.creator = self.bid.job.creator
         self.type = 'offer'
+        self.api_uri = server_uri.format(location='jobs/{}/bids/{}/offer'.format(self.bid.job['id'], self.bid['id']))
         worker_redeem_script = CScript([2,
                                         x(self.bid.creator.delegate_public_key),
                                         x(self.creator.delegate_public_key),
@@ -58,11 +57,3 @@ class TestOffer(TestEncryptedDocument):
         self.encrypt()
         self.obtain_id()
         self.sign()
-
-    def send(self):
-        return requests.post(
-            server_uri.format(location='jobs/{}/bids/{}/offer'.format(self.bid.job['id'], self.bid['id'])),
-            data={'payload': json.dumps(self.as_dict),
-                  'user': self.nonce['user'],
-                  'nonce': self.nonce['nonce']}
-        )
