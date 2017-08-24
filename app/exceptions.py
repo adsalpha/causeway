@@ -15,3 +15,7 @@ class InvalidDocumentTypeException(ProcessingError):
 
 class BadTokenException(ProcessingError):
     """Raise when a JWT has expired or has invalid syntax."""
+
+class DocumentQuotaExceeded(ProcessingError):
+    """Raise when a user has submitted more documents
+    than allowed in app.config.server.free_quota."""

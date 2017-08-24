@@ -4,7 +4,7 @@ import json
 from app.documents.user import User
 from app.documents.job import Job
 from app.causeway_token import CausewayToken
-from app.exceptions import ProcessingError, NonexistentDocumentException, BadTokenException
+from app.exceptions import ProcessingError, NonexistentDocumentException, BadTokenException, DocumentQuotaExceeded
 
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def info():
         "url": app.config.server.server_url,
         "causeway_version": app.config.server.causeway_version,
         "pricing_type": app.config.server.pricing_type,
-        "free_data": app.config.server.free_data,
+        "free_quota": app.config.server.free_quota,
         "description": app.config.server.description
     }
     return json.dumps(server_info)
@@ -71,6 +71,8 @@ def jobs():
             CausewayToken.parse(request.form['token']).save(request.form['payload'])
         except BadTokenException as e:
             return error(401, e)
+        except DocumentQuotaExceeded as e:
+            return error(402, e)
         try:
             Job.new(request.form['payload'])
             return success(201)
@@ -119,6 +121,8 @@ def bids(job_id):
             CausewayToken.parse(request.form['token']).save(request.form['payload'])
         except BadTokenException as e:
             return error(401, e)
+        except DocumentQuotaExceeded as e:
+            return error(402, e)
         try:
             Job.from_database(job_id).add_bid(request.form['payload'])
             return success(201)
@@ -152,6 +156,8 @@ def offer(job_id, bid_id):
             CausewayToken.parse(request.form['token']).save(request.form['payload'])
         except BadTokenException as e:
             return error(401, e)
+        except DocumentQuotaExceeded as e:
+            return error(402, e)
         try:
             Job.from_database(job_id).get_bid(bid_id).offer = request.form['payload']
             return success(201)
@@ -176,6 +182,8 @@ def delivery(job_id):
             CausewayToken.parse(request.form['token']).save(request.form['payload'])
         except BadTokenException as e:
             return error(401, e)
+        except DocumentQuotaExceeded as e:
+            return error(402, e)
         try:
             Job.from_database(job_id).delivery = request.form['payload']
             return success(201)
@@ -194,6 +202,8 @@ def accept_delivery(job_id):
         CausewayToken.parse(request.form['token']).save(request.form['payload'])
     except BadTokenException as e:
         return error(401, e)
+    except DocumentQuotaExceeded as e:
+        return error(402, e)
     try:
         job = Job.from_database(job_id)
         job.delivery.accept_delivery = request.form['payload']
@@ -220,6 +230,8 @@ def dispute(job_id):
             CausewayToken.parse(request.form['token']).save(request.form['payload'])
         except BadTokenException as e:
             return error(401, e)
+        except DocumentQuotaExceeded as e:
+            return error(402, e)
         try:
             Job.from_database(job_id).dispute = request.form['payload']
             return success(201)
@@ -235,6 +247,8 @@ def resolve_dispute(job_id):
         CausewayToken.parse(request.form['token']).save(request.form['payload'])
     except BadTokenException as e:
         return error(401, e)
+    except DocumentQuotaExceeded as e:
+        return error(402, e)
     try:
         Job.from_database(job_id).dispute.resolution = request.form['payload']
         return success(201)
@@ -250,6 +264,8 @@ def accept_resolution(job_id):
         CausewayToken.parse(request.form['token']).save(request.form['payload'])
     except BadTokenException as e:
         return error(401, e)
+    except DocumentQuotaExceeded as e:
+        return error(402, e)
     try:
         job = Job.from_database(job_id)
         job.dispute.accept_resolution = request.form['payload']

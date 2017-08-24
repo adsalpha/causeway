@@ -1,5 +1,6 @@
 from app.config.db import users
-from app.exceptions import NonexistentDocumentException
+from app.config.server import free_quota
+from app.exceptions import NonexistentDocumentException, DocumentQuotaExceeded
 from .unencrypted import UnencryptedDocument
 
 
@@ -63,3 +64,10 @@ class User(UnencryptedDocument):
     # TODO
     def compute_rating(self):
         return 0
+
+    def add_document(self):
+        if self.as_dict['documents'] < free_quota:
+            users.update_one({'id': self.as_dict['id']},
+                             {'$inc': {'documents': 1}})
+        else:
+            raise DocumentQuotaExceeded(free_quota)

@@ -18,7 +18,7 @@ class CausewayToken:
                 'exp': time() + 600
             }
             token.encoded = jwt.encode(token.decoded, cls.secret_key)
-            token.user = user_id
+            token.user_id = user_id
             return token
         else:
             raise NonexistentDocumentException('User with SIN {}.'.format(user_id))
@@ -30,7 +30,7 @@ class CausewayToken:
                 token = cls()
                 token.decoded = jwt.decode(encoded_token, cls.secret_key)
                 token.encoded = encoded_token
-                token.user = token.decoded['usr']
+                token.user_id = token.decoded['usr']
                 return token
             except (jwt.exceptions.DecodeError, jwt.exceptions.ExpiredSignatureError):
                 raise BadTokenException()
@@ -39,8 +39,9 @@ class CausewayToken:
             raise BadTokenException()
 
     def save(self, payload):
+        User.from_database(self.user_id).add_document()
         requests.insert_one({
             'token': self.encoded,
-            'user': self.user,
+            'user': self.user_id,
             'payload': payload
         })
