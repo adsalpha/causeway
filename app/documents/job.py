@@ -78,18 +78,14 @@ class Job(UnencryptedDocument):
     def bid_offered_to(self):
         return Bid.offered_to_from_parent(self)
 
-    @property
-    def delivery(self):
+    def get_delivery(self):
         return Delivery.from_parent(self)
 
-    @delivery.setter
-    def delivery(self, payload):
-        Delivery.new(payload, parent=self)
+    def set_delivery(self, delivery):
+        Delivery.new(delivery, parent=self)
 
-    @property
-    def dispute(self):
+    def get_dispute(self):
         return Dispute.from_parent(self)
 
-    @dispute.setter
-    def dispute(self, payload):
-        Dispute.new(payload, parent=self)
+    def set_dispute(self, dispute):
+        Dispute.new(dispute, parent=self)

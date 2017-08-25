@@ -34,6 +34,7 @@ class User(UnencryptedDocument):
     # FROM INCOMING REQUEST
 
     def save(self):
+        self.as_dict['documents'] = 0
         users.insert(self.as_dict)
 
     # FROM DATABASE

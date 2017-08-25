@@ -81,10 +81,5 @@ class Bid(EncryptedDocument):
 
     # ADJACENT
 
-    @property
-    def offer(self):
-        return Offer.from_parent(self)
-
-    @offer.setter
-    def offer(self, value):
-        Offer.new(value, parent=self)
+    def add_offer(self, offer):
+        Offer.new(offer, parent=self)

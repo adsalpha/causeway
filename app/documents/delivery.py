@@ -52,10 +52,5 @@ class Delivery(EncryptedDocument):
 
     # ADJACENT
 
-    @property
-    def accept_delivery(self):
-        return AcceptDelivery.from_parent(self)
-
-    @accept_delivery.setter
-    def accept_delivery(self, value):
-        AcceptDelivery.new(value, parent=self)
+    def set_accept_delivery(self, accept_delivery):
+        AcceptDelivery.new(accept_delivery, parent=self)

@@ -53,18 +53,8 @@ class Dispute(EncryptedDocument):
 
     # ADJACENT
 
-    @property
-    def resolution(self):
-        return DisputeResolution.from_parent(self)
+    def set_resolution(self, resolution):
+        DisputeResolution.new(resolution, parent=self)
 
-    @resolution.setter
-    def resolution(self, value):
-        DisputeResolution.new(value, parent=self)
-
-    @property
-    def accept_resolution(self):
-        return AcceptDisputeResolution.from_parent(self)
-
-    @accept_resolution.setter
-    def accept_resolution(self, value):
-        AcceptDisputeResolution.new(value, parent=self)
+    def set_accept_resolution(self, accept_resolution):
+        AcceptDisputeResolution.new(accept_resolution, parent=self)

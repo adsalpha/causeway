@@ -24,6 +24,37 @@ def success(status_code: int, message: int = None):
     return json.dumps(success), status_code
 
 
+def get_result(getter):
+    try:
+        return getter()
+    except NonexistentDocumentException as e:
+        return error(404, e)
+
+
+def post_result(poster, check_token=True):
+    if check_token:
+        try:
+            CausewayToken.parse(request.form['token']).save(request.form['payload'])
+        except BadTokenException as e:
+            return error(401, e)
+        except DocumentQuotaExceeded as e:
+            return error(402, e)
+    try:
+        poster()
+        return success(201)
+    except ProcessingError as e:
+        return error(422, e)
+    except NotImplementedError as e:
+        return error(501, e)
+
+
+def get_post_request_result(getter, poster, check_token=True):
+    if request.method == 'GET':
+        return get_result(getter)
+    elif request.method == 'POST':
+        return post_result(poster, check_token)
+
+
 # SERVICE
 
 
@@ -61,49 +92,24 @@ def request_id():
 
 @app.route('/jobs', methods=['GET', 'POST'])
 def jobs():
-    if request.method == 'GET':
-        try:
-            return Job.BulkQuery(active_only=False).serialize()
-        except NonexistentDocumentException as e:
-            return error(404, e)
-    elif request.method == 'POST':
-        try:
-            CausewayToken.parse(request.form['token']).save(request.form['payload'])
-        except BadTokenException as e:
-            return error(401, e)
-        except DocumentQuotaExceeded as e:
-            return error(402, e)
-        try:
-            Job.new(request.form['payload'])
-            return success(201)
-        except ProcessingError as e:
-            return error(422, e)
-        except NotImplementedError as e:
-            return error(501, e)
+    return get_post_request_result(
+        getter=lambda: Job.BulkQuery(active_only=False).serialize(),
+        poster=lambda: Job.new(request.form['payload'])
+    )
 
 
 @app.route('/jobs/active')
 def active_jobs():
-    """
-    Active jobs registered with this server.
-    Returns an error if no jobs are available.
-    """
-    try:
-        return Job.BulkQuery(active_only=True).serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+    return get_result(
+        getter=lambda: Job.BulkQuery(active_only=True).serialize()
+    )
 
 
 @app.route('/jobs/<string:job_id>')
 def job_by_id(job_id):
-    """
-    A job with the specified ID.
-    Returns an error if not found.
-    """
-    try:
-        return Job.from_database(job_id).serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+    return get_result(
+        getter=lambda: Job.from_database(job_id).serialize()
+    )
 
 
 # BIDS
@@ -111,33 +117,17 @@ def job_by_id(job_id):
 
 @app.route('/jobs/<string:job_id>/bids', methods=['GET', 'POST'])
 def bids(job_id):
-    if request.method == 'GET':
-        try:
-            return Job.from_database(job_id).all_bids().serialize()
-        except NonexistentDocumentException as e:
-            return error(404, e)
-    elif request.method == 'POST':
-        try:
-            CausewayToken.parse(request.form['token']).save(request.form['payload'])
-        except BadTokenException as e:
-            return error(401, e)
-        except DocumentQuotaExceeded as e:
-            return error(402, e)
-        try:
-            Job.from_database(job_id).add_bid(request.form['payload'])
-            return success(201)
-        except ProcessingError as e:
-            return error(422, e)
-        except NotImplementedError as e:
-            return error(501, e)
+    return get_post_request_result(
+        getter=lambda: Job.from_database(job_id).all_bids().serialize(),
+        poster=lambda: Job.from_database(job_id).add_bid(request.form['payload'])
+    )
 
 
 @app.route('/jobs/<string:job_id>/bids/<string:bid_id>')
 def bid_by_id(job_id, bid_id):
-    try:
-        return Job.from_database(job_id).get_bid(bid_id).serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+    return get_result(
+        getter=lambda: Job.from_database(job_id).get_bid(bid_id).serialize()
+    )
 
 
 # OFFERS
@@ -146,25 +136,10 @@ def bid_by_id(job_id, bid_id):
 @app.route('/jobs/<string:job_id>/bids/<string:bid_id>/offer', methods=['GET', 'POST'])
 @app.route('/jobs/<string:job_id>/offer')
 def offer(job_id, bid_id):
-    if request.method == 'GET':
-        try:
-            return Job.from_database(job_id).bid_offered_to().serialize()
-        except NonexistentDocumentException as e:
-            return error(404, e)
-    elif request.method == 'POST':
-        try:
-            CausewayToken.parse(request.form['token']).save(request.form['payload'])
-        except BadTokenException as e:
-            return error(401, e)
-        except DocumentQuotaExceeded as e:
-            return error(402, e)
-        try:
-            Job.from_database(job_id).get_bid(bid_id).offer = request.form['payload']
-            return success(201)
-        except ProcessingError as e:
-            return error(422, e)
-        except NotImplementedError as e:
-            return error(501, e)
+    return get_post_request_result(
+        getter=lambda: Job.from_database(job_id).bid_offered_to().serialize(),
+        poster=lambda: Job.from_database(job_id).get_bid(bid_id).add_offer(request.form['payload'])
+    )
 
 
 # DELIVERY
@@ -172,47 +147,23 @@ def offer(job_id, bid_id):
 
 @app.route('/jobs/<string:job_id>/delivery', methods=['GET', 'POST'])
 def delivery(job_id):
-    if request.method == 'GET':
-        try:
-            return Job.from_database(job_id).delivery.serialize()
-        except NonexistentDocumentException as e:
-            return error(404, e)
-    elif request.method == 'POST':
-        try:
-            CausewayToken.parse(request.form['token']).save(request.form['payload'])
-        except BadTokenException as e:
-            return error(401, e)
-        except DocumentQuotaExceeded as e:
-            return error(402, e)
-        try:
-            Job.from_database(job_id).delivery = request.form['payload']
-            return success(201)
-        except ProcessingError as e:
-            return error(422, e)
-        except NotImplementedError as e:
-            return error(501, e)
+    return get_post_request_result(
+        getter=lambda: Job.from_database(job_id).get_delivery().serialize(),
+        poster=lambda: Job.from_database(job_id).set_delivery(request.form['payload'])
+    )
 
 
 @app.route('/jobs/<string:job_id>/delivery/acceptance', methods=['POST'])
 def accept_delivery(job_id):
-    """
-    :form-params
-    """
-    try:
-        CausewayToken.parse(request.form['token']).save(request.form['payload'])
-    except BadTokenException as e:
-        return error(401, e)
-    except DocumentQuotaExceeded as e:
-        return error(402, e)
-    try:
+
+    def block():
         job = Job.from_database(job_id)
-        job.delivery.accept_delivery = request.form['payload']
+        job.get_delivery().set_accept_delivery(request.form['payload'])
         job.finish()
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
+
+    return post_result(
+        poster=lambda: block()
+    )
 
 
 # DISPUTE
@@ -220,61 +171,30 @@ def accept_delivery(job_id):
 
 @app.route('/jobs/<string:job_id>/dispute', methods=['GET', 'POST'])
 def dispute(job_id):
-    if request.method == 'GET':
-        try:
-            return Job.from_database(job_id).dispute.serialize()
-        except NonexistentDocumentException as e:
-            return error(404, e)
-    elif request.method == 'POST':
-        try:
-            CausewayToken.parse(request.form['token']).save(request.form['payload'])
-        except BadTokenException as e:
-            return error(401, e)
-        except DocumentQuotaExceeded as e:
-            return error(402, e)
-        try:
-            Job.from_database(job_id).dispute = request.form['payload']
-            return success(201)
-        except ProcessingError as e:
-            return error(422, e)
-        except NotImplementedError as e:
-            return error(501, e)
+    return get_post_request_result(
+        getter=lambda: Job.from_database(job_id).get_dispute().serialize(),
+        poster=lambda: Job.from_database(job_id).set_dispute(request.form['payload'])
+    )
 
 
 @app.route('/jobs/<string:job_id>/dispute/resolution', methods=['POST'])
 def resolve_dispute(job_id):
-    try:
-        CausewayToken.parse(request.form['token']).save(request.form['payload'])
-    except BadTokenException as e:
-        return error(401, e)
-    except DocumentQuotaExceeded as e:
-        return error(402, e)
-    try:
-        Job.from_database(job_id).dispute.resolution = request.form['payload']
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
+    return post_result(
+        poster=lambda: Job.from_database(job_id).get_dispute().set_resolution(request.form['payload'])
+    )
 
 
 @app.route('/jobs/<string:job_id>/dispute/resolution/acceptance', methods=['POST'])
 def accept_resolution(job_id):
-    try:
-        CausewayToken.parse(request.form['token']).save(request.form['payload'])
-    except BadTokenException as e:
-        return error(401, e)
-    except DocumentQuotaExceeded as e:
-        return error(402, e)
-    try:
+
+    def block():
         job = Job.from_database(job_id)
-        job.dispute.accept_resolution = request.form['payload']
+        job.get_dispute().set_accept_resolution(request.form['payload'])
         job.finish()
-        return success(201)
-    except ProcessingError as e:
-        return error(422, e)
-    except NotImplementedError as e:
-        return error(501, e)
+
+    return post_result(
+        poster=lambda: block()
+    )
 
 
 # USERS
@@ -282,30 +202,18 @@ def accept_resolution(job_id):
 
 @app.route('/users', methods=['GET', 'POST'])
 def users():
-    if request.method == 'GET':
-        try:
-            return User.BulkQuery().serialize()
-        except NonexistentDocumentException as e:
-            return error(404, e)
-    elif request.method == 'POST':
-        try:
-            User.new(request.form['payload'])
-            return success(201)
-        except ProcessingError as e:
-            return error(422, e)
-        except NotImplementedError as e:
-            return error(501, e)
+    return get_post_request_result(
+        getter=lambda: User.BulkQuery().serialize(),
+        poster=lambda: User.new(request.form['payload']),
+        check_token=False
+    )
 
 
 @app.route('/users/<string:user_id>')
 def user_by_id(user_id):
-    """
-    Information on a specific user.
-    """
-    try:
-        return User.from_database(user_id).serialize()
-    except NonexistentDocumentException as e:
-        return error(404, e)
+    return get_result(
+        getter=lambda: User.from_database(user_id).serialize()
+    )
 
 
 if __name__ == '__main__':
